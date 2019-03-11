@@ -1,19 +1,18 @@
 ## import packages
-library(readr)
-library(dplyr)
-library(plm)
+library("readr")
+library("dplyr")
 
 ## Load data
 table = read_csv(file = "data_final_2019.csv") 
 
-param = c("beta_t1", "AIM_t1", "log_market_cap_t1", "pin_t1", "log_btm_t1", "fsrv_t1", "turnover_t1", "illiq_amihud_t1", "Marketreturn", "RiskFreeReturn", "ExcessReturn")
-
+param = c("beta_t1", "AIM_t1", "log_market_cap_t1", "pin_t1", "log_btm_t1", "fsrv_t1", "turnover_t1", "illiq_amihud_t1", "Marketretrun", "RiskFreeReturn", "ExcessReturn")
+n_param = length(param)
 
 ### Calcul des corrélations
 
 
 
-### Regression avec seulement beta
+### Regression
 
 regression <- function(param)
 {
@@ -29,7 +28,8 @@ regression <- function(param)
       model = as.formula(paste("return_rf ~ ",  paste(param, collapse="+"))) 
       if (!("pin_t1" %in% param))
       {
-        fit = lm(model, data=table, subset=(table$year == y & table$month == m))
+        subtable = subset(table, table$year == y & table$month == m)
+        fit = lm(model, data=subtable)
       }
       else
       {
@@ -51,39 +51,96 @@ regression <- function(param)
 
   # Test de Fama et MacBeth
 
-p_values <- function(gamma)
+MacBeth <- function(gamma, param)
 {
   n_param = ncol(gamma)
-  cat("   -- p-values --\n")
+  result = matrix(nrow = 2, ncol=length(param))
+  rownames(result) = c("p-value", "gamma")
+  colnames(result) = param
+  #cat("   -- p-values --\n")
   for (i in 2:n_param)
   {
-    t_test = t.test(gamma[,i])
-    cat(paste(colnames(gamma)[i], ": "), t_test$p.value, "\n")
+    t_test = t.test(na.omit(gamma[,i]))
+    #cat(paste(colnames(gamma)[i], ": "), t_test$p.value, "\n")
+    var = colnames(gamma)[i]
+    result[1, var] = t_test$p.value
+    result[2, var] = t_test$estimate
   }
+  return(result)
 }
 
+
+
+### Initialisation
+
+p_values = matrix(nrow=1, ncol=n_param)
+gammas = matrix(nrow=1, ncol=n_param)
+#lignames = c()
+colnames(p_values) = param
+colnames(gammas) = param
+
+### Regression avec seulement beta
+
 gamma = regression(c("beta_t1"))
-p_values(gamma)
+result = MacBeth(gamma, param)
+p_values[1, ] = result[1, ]
+gammas[1, ] = result[2, ]
+#lignames = c(lignames, "beta_t1")
+
 
 ### Regression avec beta + AIM
 
-gamma = regression(c("beta_t1", "AIM_t1"))
-p_values(gamma)
+modele = c("beta_t1", "AIM_t1")
+gamma = regression(modele)
+result = MacBeth(gamma, param)
+p_values = rbind(p_values, result[1, ])
+gammas = rbind(gammas, result[2, ])
+
+#lignames = c(lignames, "beta_t1 + AIM_t1")
 
 ### Regression avec beta + AIM + PIN
+modele = c("beta_t1", "AIM_t1", "pin_t1")
+gamma = regression(modele)
+result = MacBeth(gamma, param)
+p_values = rbind(p_values, result[1, ])
+gammas = rbind(gammas, result[2, ])
 
-gamma = regression(c("beta_t1", "AIM_t1", "pin_t1"))
-p_values(gamma)
+#lignames = c(lignames, "beta_t1 + AIM_t1 + pint_t1")
 
 ### Regression avec beta + AIM + SIZE
 
-gamma = regression(c("beta_t1", "AIM_t1", "log_market_cap_t1"))
-p_values(gamma)
+modele = c("beta_t1", "AIM_t1", "log_market_cap_t1")
+gamma = regression(modele)
+result = MacBeth(gamma, param)
+p_values = rbind(p_values, result[1, ])
+gammas = rbind(gammas, result[2, ])
+
 
 ### Regression avec beta + AIM + SIZE + PIN
 
-gamma = regression(c("beta_t1", "AIM_t1", "log_market_cap_t1", "pin_t1"))
-p_values(gamma)
+modele = c("beta_t1", "AIM_t1", "log_market_cap_t1", "pin_t1")
+gamma = regression(modele)
+result = MacBeth(gamma, param)
+p_values = rbind(p_values, result[1, ])
+gammas = rbind(gammas, result[2, ])
+
+#lignames = c(lignames, "beta_t1 + AIM_t1 + log_market_cap_t1 + pint_t1")
 
 
+### Regression en rajoutant le reste
 
+for (i in 5:(n_param-3))
+{
+  modele = param[1:i]
+  print(modele)
+  gamma = regression(modele)
+  result = MacBeth(gamma, param)
+  p_values = rbind(p_values, result[1, ])
+  gammas = rbind(gammas, result[2, ])
+  #lignames = c(lignames, paste(model, collapse=" + "))
+}
+
+#rownames(result) = lignames
+
+optim = which.min(p_values[,"AIM_t1"])
+p_values[optim,]
