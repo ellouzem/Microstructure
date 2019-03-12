@@ -5,8 +5,11 @@ library("dplyr")
 ## Load data
 table = read_csv(file = "data_final_2019.csv") 
 
-param = c("beta_t1", "AIM_t1", "log_market_cap_t1", "pin_t1", "log_btm_t1", "fsrv_t1", "turnover_t1", "illiq_amihud_t1", "Marketretrun", "RiskFreeReturn", "ExcessReturn")
+param = c("beta_t1", "AIM_t1", "log_market_cap_t1", "pin_t1", "log_btm_t1", "fsrv_t1", "turnover_t1", "illiq_amihud_t1")
+param_rf = c("return_rf", "beta_t1", "AIM_t1", "log_market_cap_t1", "pin_t1", "log_btm_t1", "fsrv_t1", "turnover_t1", "illiq_amihud_t1")
 n_param = length(param)
+
+### Summary statistics
 
 ### Calcul des corrélations
 
@@ -46,6 +49,7 @@ regression <- function(param)
       gamma <- rbind(gamma, fit$coefficients)
     }
   }
+  colnames(gamma) <- c("alpha", param)
   return(gamma)
 }
 
@@ -60,11 +64,15 @@ MacBeth <- function(gamma, param)
   #cat("   -- p-values --\n")
   for (i in 2:n_param)
   {
-    t_test = t.test(na.omit(gamma[,i]))
-    #cat(paste(colnames(gamma)[i], ": "), t_test$p.value, "\n")
-    var = colnames(gamma)[i]
-    result[1, var] = t_test$p.value
-    result[2, var] = t_test$estimate
+    g = na.omit(gamma[,i])
+    if (length(g) > 0)
+    {
+      t_test = t.test()
+      #cat(paste(colnames(gamma)[i], ": "), t_test$p.value, "\n")
+      var = colnames(gamma)[i]
+      result[1, var] = t_test$p.value
+      result[2, var] = t_test$estimate
+    }
   }
   return(result)
 }
@@ -129,7 +137,7 @@ gammas = rbind(gammas, result[2, ])
 
 ### Regression en rajoutant le reste
 
-for (i in 5:(n_param-3))
+for (i in 5:n_param)
 {
   modele = param[1:i]
   print(modele)
