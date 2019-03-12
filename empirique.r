@@ -144,3 +144,81 @@ for (i in 5:(n_param-3))
 
 optim = which.min(p_values[,"AIM_t1"])
 p_values[optim,]
+
+
+
+
+
+######################################################
+######Matrice de Correlation 2 a 2 ###################
+
+CorrCouple <- function(param1, param2)
+{
+
+  result = matrix(nrow = 2, ncol=1)
+  rownames(result) = c("p-value", "correlation")
+  colnames(result) = paste( c(param1,param2) , collapse=" % ")
+
+  v1 = unlist( subset(table[param1], table[param1]!="NA" & table[param2]!="NA") )
+  v2 = unlist( subset(table[param2], table[param1]!="NA" & table[param2]!="NA") )
+  test = cor.test( v1 , v2, method=c("pearson", "kendall", "spearman"))
+  
+  result[1,1] = unlist(test[3])
+  result[2,1] = unlist(test[4])
+  
+  hello = c(unlist(test[3]), unlist(test[4]))
+
+  return(hello)
+}
+
+CorrCouple("return_rf", "beta_t1")
+
+MatrixCorr <- function(param){
+  n = length(param)
+  
+  p_val_matrix = matrix(nrow = n, ncol=n)
+  corr_matrix = matrix(nrow = n, ncol=n)
+  rownames(p_val_matrix) = param
+  rownames(corr_matrix) = param
+  colnames(p_val_matrix) = param
+  colnames(corr_matrix) = param
+  
+  for (i in 1:n)
+  {
+    for (j in i:n){
+      res = CorrCouple(param[i],param[j])
+      p_val_matrix[i,j] = res[1]
+      corr_matrix[i,j] = res[2]
+      cat("i= ",i," j= ",j, "\n")
+    }
+  }
+  L = list("p_values" = p_val_matrix, "corr"= corr_matrix)
+
+  return(L)
+}
+L = MatrixCorr(param)
+
+#execute L$p_values and L$corr
+
+
+######################################################
+###### Matrice d'infos  générales ###################
+
+MatrixInfos <- function(param){
+  n = length(param)
+  result = matrix(nrow=n, ncol=4)
+  rownames(result) = param
+  colnames(result) = c("min", "max", "mean", "median")
+  
+  for(i in 1:n){
+    vect = unlist( subset(table[param[i]], table[param[i]]!="NA" ) )
+    result[i,1] = min(vect)
+    result[i,2] = max(vect)
+    result[i,3] = mean(vect)
+    result[i,4] = median(vect)
+  }
+  return(result)
+}
+
+Infos = MatrixInfos(param)
+
