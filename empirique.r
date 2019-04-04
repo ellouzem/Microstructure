@@ -28,7 +28,6 @@ print(Corr$corr)
 
 ### Regresion with Fama-MacBeth ###
 
-cat("### Regresion with Fama-MacBeth ###")
 result1 = regression_table_FMB(param, n_param)
 print(result1$gammas)
 print(result1$p_values)
