@@ -13,6 +13,8 @@ table = read_csv(file = "data_final_2019.csv")
 
 param = c("beta_t1", "AIM_t1", "log_market_cap_t1", "pin_t1", "log_btm_t1", "fsrv_t1", "turnover_t1", "illiq_amihud_t1")
 param_rf = c("return_rf", "beta_t1", "AIM_t1", "log_market_cap_t1", "pin_t1", "log_btm_t1", "fsrv_t1", "turnover_t1", "illiq_amihud_t1")
+param_pin = c("beta_t1", "AIM_t1", "log_market_cap_t1", "log_btm_t1", "fsrv_t1", "turnover_t1", "illiq_amihud_t1")
+
 n_param = length(param)
 
 ### Summary statistics ###
@@ -28,7 +30,7 @@ print(Corr$corr)
 
 ### Regresion with Fama-MacBeth ###
 
-result1 = regression_table_FMB(param, n_param)
+result1 = regression_table_FMB(param, n_param, param_pin)
 print(result1$gammas)
 print(result1$p_values)
 
@@ -37,7 +39,7 @@ result1$p_values[optim1,]
 
 ### Regression with L-R ###
 
-result2 = regression_table_LR(param, n_param)
+result2 = regression_table_LR(param, n_param, param_pin)
 print(result2$gammas)
 print(result2$p_values)
 

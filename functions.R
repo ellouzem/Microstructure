@@ -134,7 +134,7 @@ MacBeth <- function(gamma, param)
 
 # Return gammas and p-values of different regression models
 
-regression_table_FMB <- function(param, n_param)
+regression_table_FMB <- function(param, n_param, param2)
 {
   # Initialization
   p_values = matrix(nrow=1, ncol=n_param)
@@ -142,7 +142,7 @@ regression_table_FMB <- function(param, n_param)
   #lignames = c()
   colnames(p_values) = param
   colnames(gammas) = param
-  pb = txtProgressBar(min=0, max=12, style = 3)
+  pb = txtProgressBar(min=0, max=16, style = 3)
   
   # Regression with only beta
   gamma = regression(c("beta_t1"))
@@ -209,6 +209,17 @@ regression_table_FMB <- function(param, n_param)
   for (i in 5:n_param)
   {
     modele = param[1:i]
+    gamma = regression(modele)
+    result = MacBeth(gamma, param)
+    p_values = rbind(p_values, result[1, ])
+    gammas = rbind(gammas, result[2, ])
+    setTxtProgressBar(pb, k)
+    k = k+1
+  }
+  
+  for (i in 4:(n_param-1))
+  {
+    modele = param2[1:i]
     gamma = regression(modele)
     result = MacBeth(gamma, param)
     p_values = rbind(p_values, result[1, ])
@@ -288,14 +299,14 @@ LR <- function(gamma, errors, param)
   return(result)
 }
 
-regression_table_LR <- function(param, n_param)
+regression_table_LR <- function(param, n_param, param2)
 {
   # Initialization
   p_values2 = matrix(nrow=1, ncol=n_param)
   gammas2 = matrix(nrow=1, ncol=n_param)
   colnames(p_values2) = param
   colnames(gammas2) = param
-  pb = txtProgressBar(min=0, max=12, style = 3)
+  pb = txtProgressBar(min=0, max=16, style = 3)
   
   # Regression with only beta
   result = regression_LR(c("beta_t1"))
@@ -387,6 +398,20 @@ regression_table_LR <- function(param, n_param)
   for (i in 5:n_param)
   {
     modele = param[1:i]
+    result = regression_LR(modele)
+    gamma = result$gamma
+    errors = result$errors
+    result2 = LR(gamma, errors, param)
+    
+    p_values2 = rbind(p_values2, result2[1, ])
+    gammas2 = rbind(gammas2, result2[2, ])
+    setTxtProgressBar(pb, k)
+    k = k+1
+  }
+  
+  for (i in 4:(n_param-1))
+  {
+    modele = param2[1:i]
     result = regression_LR(modele)
     gamma = result$gamma
     errors = result$errors
